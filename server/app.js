@@ -22,15 +22,106 @@ var fml_data = {
                 "long": "39.4444",
                 "onTrack": true
             }
+        },
+        "spots": {
+            "cargo1": [
+                {
+                    "lat": [],
+                    "long": [],
+                    "move": false
+                },
+                {
+                    "lat": [],
+                    "long": [],
+                    "move": false
+                },
+                {
+                    "lat": [],
+                    "long": [],
+                    "move": false
+                },
+                {
+                    "lat": [],
+                    "long": [],
+                    "move": false
+                },
+                {
+                    "lat": [],
+                    "long": [],
+                    "move": false
+                },
+                {
+                    "lat": [],
+                    "long": [],
+                    "move": false
+                },
+                {
+                    "lat": [43.0000],
+                    "long": [43.0000],
+                    "move": false
+                }
+            ],
+            "cargo2": [
+                {
+                    "lat": [],
+                    "long": [],
+                    "move": false
+                },
+                {
+                    "lat": [],
+                    "long": [],
+                    "move": false
+                },
+                {
+                    "lat": [],
+                    "long": [],
+                    "move": false
+                },
+                {
+                    "lat": [],
+                    "long": [],
+                    "move": false
+                },
+                {
+                    "lat": [],
+                    "long": [],
+                    "move": false
+                },
+                {
+                    "lat": [],
+                    "long": [],
+                    "move": false
+                },
+                {
+                    "lat": [],
+                    "long": [],
+                    "move": false
+                }
+            ]
         }
     }
+}
+
+function checkPath (date, user, cargo, lat, long) {
+    var safe = false;
+    for(var coord = 0; coord < fml_data[user].spots[cargo][date].lat.length; coord++){
+        var lat1 = fml_data[user].spots[cargo][date].lat[coord];
+        var long1 = fml_data[user].spots[cargo][date].long[coord];
+        var dist = Math.sqrt((lat - lat1)*(lat - lat1) + (long - long1)*(long - long1));
+        if (dist < 0.002){
+            safe = true;
+        }
+        console.log(dist);
+    }
+    return safe;
 }
 
 app.post('/newUser', function(req, res) {
     fml_data[req.body.username] = {
         "username": req.body.username,
         //"password": req.body.password,
-        "items": {}
+        "items": {},
+        "spots": {}
     }
     for(var cargo in req.body.items){
         fml_data[req.body.username].items[cargo] = {
@@ -39,6 +130,43 @@ app.post('/newUser', function(req, res) {
             "long": req.body.items[cargo].long,
             "onTrack": true
         }
+        fml_data[req.body.username].spots[cargo] = [
+            {
+                "lat": [],
+                "long": [],
+                "move": false
+            },
+            {
+                "lat": [],
+                "long": [],
+                "move": false
+            },
+            {
+                "lat": [],
+                "long": [],
+                "move": false
+            },
+            {
+                "lat": [],
+                "long": [],
+                "move": false
+            },
+            {
+                "lat": [],
+                "long": [],
+                "move": false
+            },
+            {
+                "lat": [],
+                "long": [],
+                "move": false
+            },
+            {
+                "lat": [],
+                "long": [],
+                "move": false
+            }
+        ]
     }
     res.end(JSON.stringify(fml_data[req.body.username]))
 })
@@ -53,8 +181,28 @@ app.get('/:id/listCargo', function(req, res) {
     res.end(JSON.stringify(output));
 })
 
+app.post('/:id/makeSpot/:item', function(req, res) {
+    fml_data[req.params.id].spots[req.params.item][parseInt(req.body.date)].lat.push(req.body.lat);
+    fml_data[req.params.id].spots[req.params.item][parseInt(req.body.date)].long.push(req.body.long);
+    res.end(JSON.stringify(fml_data[req.params.id].spots[parseInt(req.body.date)]))
+})
+
 app.get('/:id/:item', function(req, res) {
-    res.end(JSON.stringify({"lat": fml_data[req.params.id].items[req.params.item].lat, "long": fml_data[req.params.id].items[req.params.item].long}));
+    res.end(JSON.stringify({
+        "lat": fml_data[req.params.id].items[req.params.item].lat,
+        "long": fml_data[req.params.id].items[req.params.item].long, 
+        "onTrack": fml_data[req.params.id].items[req.params.item].onTrack}));
+})
+
+
+
+
+app.post('/:id/:item', function(req, res) {
+    fml_data[req.params.id].items[req.params.item].lat = req.body.lat;
+    fml_data[req.params.id].items[req.params.item].long = req.body.long;
+    var d = new Date();
+    fml_data[req.params.id].items[req.params.item].onTrack = checkPath(d.getDay(), req.params.id, req.params.item, parseFloat(req.body.lat), parseFloat(req.body.long))
+    res.end(JSON.stringify(fml_data[req.params.id].items[req.params.item]));
 })
 
 
