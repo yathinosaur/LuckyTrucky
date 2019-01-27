@@ -125,11 +125,17 @@ function checkPath (date, user, cargo, lat, long) {
 
 function checkGood(device, time){
     var safe = true;
-    var times = fml_data[device].times.sort();
-    var median = Math.round(times.length / 2);
-    console.log(time);
-    console.log(times[median]);
-    if(Math.abs(time - times[median]) > 3)
+    // var times = fml_data[device].times.sort();
+    // var median = Math.round(times.length / 2);
+    // console.log(time);
+    // console.log(times[median]);
+    // if(Math.abs(time - times[median]) > 3)
+    //     safe = false;
+    if(fml_data[device].start - time > 2)
+        safe = false;
+    if(fml_data[device].end > 24 && time < 12)
+        time+=12;
+    if(time - fml_data[device].end > 2)
         safe = false;
     fml_data[device].onTrack = safe;
 }
@@ -138,10 +144,15 @@ app.post('/newDevice', function(req, res) {
     fml_data[req.body.device] = {
             "name": req.body.device,
             times: [parseFloat(req.body.time)],
+            start: parseFloat(req.body.start),
+            end: parseFloat(req.body.end),
+            times: [],
             onTrack: true,
             lat: req.body.lat,
             long: req.body.long
         }
+    if(fml_data[req.body.device].end < fml_data[req.body.device].start)
+        fml_data[req.body.device].end += 24;
     res.end(JSON.stringify(fml_data))
 })
 
@@ -151,7 +162,7 @@ app.get('/check', function(req, res) {
 
 app.post('/check/:device', function(req, res) {
     console.log(fml_data[req.params.device].times)
-    if(req.body.type == "StartedMove"){
+    if(req.body.type != "NoMove" && req.body.type != "NoMoveTimeout"){
         checkGood(req.params.device, req.body.time);
         fml_data[req.params.device].times.push(parseFloat(req.body.time));
         fml_data[req.params.device].lat = req.body.lat;

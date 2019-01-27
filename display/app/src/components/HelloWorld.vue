@@ -8,7 +8,7 @@
       <div>Longitude</div>
       <input type="number" ref = "longitude"></input>
       <div>Set Time</div>
-      <input type="number" ref = "set_time"></input>
+      <input type="number" ref = "set_time1"></input><input type="number" ref = "set_time2"></input>
       <button v-on:click="postDevice()">Submit</button>
     </div>
     <div>
@@ -79,7 +79,8 @@ export default {
       var _this = this;
       HTTP.post(`newDevice`, {
         "device": _this.$refs.device.value,
-        "time": _this.$refs.set_time.value,
+        "start": _this.$refs.set_time1.value,
+        "end": _this.$refs.set_time2.value,
         "lat": _this.$refs.latitude.value,
         "long": _this.$refs.longitude.value
       })
@@ -94,6 +95,8 @@ export default {
     newInput: function() {
       var output = {};
       var _this = this;
+      this.trouble = false;
+      this.trouble_device = "";
       HTTP.post(`check/` + _this.$refs.name.value, {
         "device": _this.$refs.name.value,
         "type": _this.$refs.type.value,
@@ -103,16 +106,21 @@ export default {
       })
     .then(response => {
       console.log(response.data);
-      output = response.data;
+      if(response.data.onTrack == false){
+        _this.trouble = true;
+        _this.trouble_device = this.$refs.name.value;
+      }
+      // output = response.data;
     })
     .catch(e => {
       _this.errors.push(e)
     })
-    if(!output.onTrack){
-      this.trouble = true;
-      this.trouble_device = this.$refs.name.value;
+    console.log(output)
+    // if(output.onTrack == false){
+    //   this.trouble = true;
+    //   this.trouble_device = this.$refs.name.value;
     }
-    }
+    
   },
   mounted: function(){
     this.getDevices();
