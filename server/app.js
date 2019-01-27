@@ -127,6 +127,8 @@ function checkGood(device, time){
     var safe = true;
     var times = fml_data[device].times.sort();
     var median = Math.round(times.length / 2);
+    console.log(time);
+    console.log(times[median]);
     if(Math.abs(time - times[median]) > 3)
         safe = false;
     fml_data[device].onTrack = safe;

@@ -108,7 +108,7 @@ export default {
     .catch(e => {
       _this.errors.push(e)
     })
-    if(output.onTrack == false){
+    if(!output.onTrack){
       this.trouble = true;
       this.trouble_device = this.$refs.name.value;
     }
