@@ -1,105 +1,112 @@
 var express = require('express');
 var app = express();
+var cors = require('cors')
 var bodyParser = require("body-parser");
+
+app.use(cors())
 
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 
+// var fml_data = {
+//     "nirosh": {
+//         "username": "nirosh",
+//         //"password": "nirosh1",
+//         "items": {
+//             "cargo1" : {
+//                 "name": "cargo1",
+//                 "lat": "47.8813",
+//                 "long": "43.5513",
+//                 "onTrack": true
+//             },
+//             "cargo2" : {
+//                 "name": "cargo2",
+//                 "lat": "45.3332",
+//                 "long": "39.4444",
+//                 "onTrack": true
+//             }
+//         },
+//         "spots": {
+//             "cargo1": [
+//                 {
+//                     "lat": [],
+//                     "long": [],
+//                     "move": false
+//                 },
+//                 {
+//                     "lat": [],
+//                     "long": [],
+//                     "move": false
+//                 },
+//                 {
+//                     "lat": [],
+//                     "long": [],
+//                     "move": false
+//                 },
+//                 {
+//                     "lat": [],
+//                     "long": [],
+//                     "move": false
+//                 },
+//                 {
+//                     "lat": [],
+//                     "long": [],
+//                     "move": false
+//                 },
+//                 {
+//                     "lat": [],
+//                     "long": [],
+//                     "move": false
+//                 },
+//                 {
+//                     "lat": [43.0000],
+//                     "long": [43.0000],
+//                     "move": false
+//                 }
+//             ],
+//             "cargo2": [
+//                 {
+//                     "lat": [],
+//                     "long": [],
+//                     "move": false
+//                 },
+//                 {
+//                     "lat": [],
+//                     "long": [],
+//                     "move": false
+//                 },
+//                 {
+//                     "lat": [],
+//                     "long": [],
+//                     "move": false
+//                 },
+//                 {
+//                     "lat": [],
+//                     "long": [],
+//                     "move": false
+//                 },
+//                 {
+//                     "lat": [],
+//                     "long": [],
+//                     "move": false
+//                 },
+//                 {
+//                     "lat": [],
+//                     "long": [],
+//                     "move": false
+//                 },
+//                 {
+//                     "lat": [],
+//                     "long": [],
+//                     "move": false
+//                 }
+//             ]
+//         }
+//     }
+// }
+
 var fml_data = {
-    "nirosh": {
-        "username": "nirosh",
-        //"password": "nirosh1",
-        "items": {
-            "cargo1" : {
-                "name": "cargo1",
-                "lat": "47.8813",
-                "long": "43.5513",
-                "onTrack": true
-            },
-            "cargo2" : {
-                "name": "cargo2",
-                "lat": "45.3332",
-                "long": "39.4444",
-                "onTrack": true
-            }
-        },
-        "spots": {
-            "cargo1": [
-                {
-                    "lat": [],
-                    "long": [],
-                    "move": false
-                },
-                {
-                    "lat": [],
-                    "long": [],
-                    "move": false
-                },
-                {
-                    "lat": [],
-                    "long": [],
-                    "move": false
-                },
-                {
-                    "lat": [],
-                    "long": [],
-                    "move": false
-                },
-                {
-                    "lat": [],
-                    "long": [],
-                    "move": false
-                },
-                {
-                    "lat": [],
-                    "long": [],
-                    "move": false
-                },
-                {
-                    "lat": [43.0000],
-                    "long": [43.0000],
-                    "move": false
-                }
-            ],
-            "cargo2": [
-                {
-                    "lat": [],
-                    "long": [],
-                    "move": false
-                },
-                {
-                    "lat": [],
-                    "long": [],
-                    "move": false
-                },
-                {
-                    "lat": [],
-                    "long": [],
-                    "move": false
-                },
-                {
-                    "lat": [],
-                    "long": [],
-                    "move": false
-                },
-                {
-                    "lat": [],
-                    "long": [],
-                    "move": false
-                },
-                {
-                    "lat": [],
-                    "long": [],
-                    "move": false
-                },
-                {
-                    "lat": [],
-                    "long": [],
-                    "move": false
-                }
-            ]
-        }
-    }
+
 }
 
 function checkPath (date, user, cargo, lat, long) {
@@ -115,6 +122,42 @@ function checkPath (date, user, cargo, lat, long) {
     }
     return safe;
 }
+
+function checkGood(device, time){
+    var safe = true;
+    var times = fml_data[device].times.sort();
+    var median = Math.round(times.length / 2);
+    if(Math.abs(time - times[median]) > 3)
+        safe = false;
+    fml_data[device].onTrack = safe;
+}
+
+app.post('/newDevice', function(req, res) {
+    fml_data[req.body.device] = {
+            "name": req.body.device,
+            times: [parseFloat(req.body.time)],
+            onTrack: true,
+            lat: req.body.lat,
+            long: req.body.long
+        }
+    res.end(JSON.stringify(fml_data))
+})
+
+app.get('/check', function(req, res) {
+    res.end(JSON.stringify(fml_data))
+})
+
+app.post('/check/:device', function(req, res) {
+    console.log(fml_data[req.params.device].times)
+    if(req.body.type == "StartedMove"){
+        checkGood(req.params.device, req.body.time);
+        fml_data[req.params.device].times.push(parseFloat(req.body.time));
+        fml_data[req.params.device].lat = req.body.lat;
+        fml_data[req.params.device].long = req.body.long;
+    }
+    res.end(JSON.stringify(fml_data[req.params.device]))
+})
+
 
 app.post('/newUser', function(req, res) {
     fml_data[req.body.username] = {
@@ -169,6 +212,10 @@ app.post('/newUser', function(req, res) {
         ]
     }
     res.end(JSON.stringify(fml_data[req.body.username]))
+})
+
+app.get('/safe', function(req, res){
+    res.end("CONNECTED");
 })
 
 app.get('/:id/listCargo', function(req, res) {
